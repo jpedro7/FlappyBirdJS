@@ -32,12 +32,11 @@ let player = {
   update: function() {
     this.speed += gravity;
     this.y += this.speed;
-    
+
     if (this.y > ground.y - this.height && currentState != LOST) {
       this.y = ground.y - this.height;
-    }
-
-    else if (this.y < 0) {
+      this.speed = 0;
+    } else if (this.y < 0) {
       this.y = 0;
     }
   },
@@ -91,7 +90,7 @@ function main() {
   document.body.appendChild(canvas);
 
   currentState = START;
-  
+
   document.addEventListener('mousedown', () => {
     if (currentState == LOST) {
       obstacles.obs_list = [];
@@ -99,7 +98,7 @@ function main() {
     } else if (currentState == START) {
       currentState = PLAYING;
     } else if (currentState == PLAYING) {
-      jump();
+        jump();
     }
   });
   document.addEventListener('keydown', event => {
@@ -133,8 +132,10 @@ function update() {
   frames++;
 
   if (currentState == PLAYING) {
+    counter = 0;
     obstacles.update();
   }
+
   player.update();
 }
 
@@ -159,6 +160,7 @@ function jump (event) {
   player.jump();
 }
 
+let counter = 0;
 function checkColision() {
   if (obstacles.obs_list.length != 0) {
     let obs = obstacles.obs_list[0];
@@ -166,8 +168,18 @@ function checkColision() {
     if (player.x + player.width >= obs.x && player.x <= obs.x + obs.width) {
       if (player.y + player.height >= ground.y - obs.height) {
         currentState = LOST;
+        if (counter == 0) {
+          player.speed = 0;
+          jump();
+          counter++;
+        }
       } else if (player.y <= obs.height2) {
         currentState = LOST;
+        if (counter == 0) {
+          player.speed = 0;
+          jump();
+          counter++;
+        }
       }
     }
   }
