@@ -1,7 +1,8 @@
 const WIDTH = 500, HEIGHT = 500;
 const JUMP_STRENGHT = -10;
 const GAME_SPEED = 5;
-let canvas, ctx, frames = 0, gravity = 0.8;
+const START = 0, PLAYING = 1, LOST = 2;
+let canvas, ctx, frames = 0, gravity = 0.8, currentState = 0;
 
 let ground = {
   x: 0,
@@ -32,7 +33,7 @@ let player = {
     this.speed += gravity;
     this.y += this.speed;
     
-    if (this.y > ground.y - this.height) {
+    if (this.y > ground.y - this.height && currentState != LOST) {
       this.y = ground.y - this.height;
     }
 
@@ -89,7 +90,30 @@ function main() {
   ctx = canvas.getContext('2d');
   document.body.appendChild(canvas);
 
-  document.addEventListener('mousedown', jump);
+  currentState = START;
+  
+  document.addEventListener('mousedown', () => {
+    if (currentState == LOST) {
+      obstacles.obs_list = [];
+      currentState = START;
+    } else if (currentState == START) {
+      currentState = PLAYING;
+    } else if (currentState == PLAYING) {
+      jump();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key == ' ') {
+      if (currentState == LOST) {
+        obstacles.obs_list = [];
+        currentState = START;
+      } else if (currentState == START) {
+        currentState = PLAYING;
+      } else if (currentState == PLAYING) {
+        jump();
+      }
+    }
+  });
 
   runGame();
 }
@@ -97,23 +121,34 @@ function main() {
 function runGame() {
   update();
   draw();
-
+  
   window.requestAnimationFrame(runGame);
 }
 
 function update() {
-  if (frames % 60 == 0) {
+  if (frames % 60 == 0 && currentState == PLAYING) {
     obstacles.insert();
   }
+  checkColision();
   frames++;
 
-  obstacles.update();
+  if (currentState == PLAYING) {
+    obstacles.update();
+  }
   player.update();
 }
 
 function draw() {
   ctx.fillStyle = 'lightblue';
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  if (currentState == START) {
+    ctx.fillStyle = 'darkgreen';
+    ctx.fillRect(WIDTH / 2 - 25, HEIGHT / 2 - 25, 50, 50);
+  } else if (currentState == LOST) {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(WIDTH / 2 - 25, HEIGHT / 2 - 25, 50, 50);
+  }
 
   ground.draw();
   obstacles.draw();
@@ -122,4 +157,18 @@ function draw() {
 
 function jump (event) {
   player.jump();
+}
+
+function checkColision() {
+  if (obstacles.obs_list.length != 0) {
+    let obs = obstacles.obs_list[0];
+
+    if (player.x + player.width >= obs.x && player.x <= obs.x + obs.width) {
+      if (player.y + player.height >= ground.y - obs.height) {
+        currentState = LOST;
+      } else if (player.y <= obs.height2) {
+        currentState = LOST;
+      }
+    }
+  }
 }
